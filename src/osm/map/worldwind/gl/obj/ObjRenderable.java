@@ -15,8 +15,10 @@ public class ObjRenderable extends GLRenderable {
 	static Map<String, ObjLoader> modelCache = new HashMap<>();
 	String modelSource;
 	boolean centerit = false, flipTextureVertically = false;
+	boolean modelLoading = false;
 
 	private String id;
+	private double minumumScale=.2;
 
 	public ObjRenderable(Position pos, String modelSource) {
 		super(pos);
@@ -30,13 +32,20 @@ public class ObjRenderable extends GLRenderable {
 		this.flipTextureVertically = flipTextureVertically;
 	}
 
-	protected ObjLoader getModel(final DrawContext dc) {
+	public String getModelKey(DrawContext dc) {
 		String key = modelSource + "#" + dc.hashCode();
+		return key;
+	}
+
+	protected ObjLoader getModel(final DrawContext dc) {
+		String key = this.getModelKey(dc);
 		if (modelCache.get(key) == null) {
+			modelLoading = true;
 			modelCache.put(key, new ObjLoader(modelSource, dc.getGL().getGL2(), centerit, flipTextureVertically));
 		}
 		ObjLoader model = modelCache.get(key);
 		eyeDistanceOffset = Math.max(Math.max(model.getXWidth(), model.getYHeight()), model.getZDepth());
+		modelLoading = false;
 		return modelCache.get(key);
 	}
 
@@ -46,6 +55,9 @@ public class ObjRenderable extends GLRenderable {
 
 	@Override
 	protected void drawGL(DrawContext dc) {
+		if(modelLoading) {
+			return;
+		}
 		GL2 gl = dc.getGL().getGL2();
 		gl.glRotated(90, 1, 0, 0);
 		ObjLoader l = getModel(dc);
@@ -82,10 +94,14 @@ public class ObjRenderable extends GLRenderable {
 
 		double scale = size / modelPixels;
 
-		if (scale < .5) {
-			scale = .5;
+		if (scale < this.minumumScale) {
+			scale = this.minumumScale;
 		}
 		return scale;
+	}
+
+	public void setMinimumScaleSize(double minimumScale) {
+		this.minumumScale = minimumScale;
 	}
 
 	public String getId() {

@@ -2,13 +2,13 @@ package osm.map.worldwind.gl.obj;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
+import foxtrot.Task;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,7 +65,15 @@ public class ObjLoader {
 			try {
 				is = getInputStream(basePath, objPath);
 				bufferedReader = new BufferedReader(new InputStreamReader(is));
-				loadObject(bufferedReader);
+				final BufferedReader bufferedReaderLocal = bufferedReader;
+				foxtrot.ConcurrentWorker.post(new Task() {
+					@Override
+					public Object run() throws Exception {
+						loadObject(bufferedReaderLocal);
+						return null;
+					}
+				});
+				this.processFacesInEDT(); // this process depends on the GL context, which apparently can't be shared between threads
 				if (centered) {
 					centerit();
 				}
@@ -208,6 +216,12 @@ public class ObjLoader {
 			System.out.println("Malformed OBJ file: " + br.toString() + "\r \r" + e.getMessage());
 		}
 		Collections.sort(faces);
+	}
+
+	public void processFacesInEDT() {
+		for(Face face: this.faces) {
+			face.createTexture();
+		}
 	}
 
 	private void centerit() {
@@ -374,6 +388,9 @@ public class ObjLoader {
 					polyType = GL2.GL_POLYGON;
 					break;
 			}
+		}
+
+		public void createTexture() {
 			if (mtl.map_Kd != null) {
 				try {
 					texture = getTexture(mtl.map_Kd);

@@ -31,7 +31,7 @@ public abstract class GLRenderable implements Renderable, PreRenderable, Highlig
 	protected double azimuth = 0.0;
 	protected double roll = 0.0;
 	protected double elevation = 0.0;
-	protected double renderDistance = 500000; //do not draw if object is this far from eye
+	protected double renderDistance = 2*500000; //do not draw if object is this far from eye
 	protected boolean keepConstantSize = true;
 	protected double size = 1;
 	protected boolean clamp = false;

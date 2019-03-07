@@ -21,6 +21,7 @@ import javax.media.opengl.GL2;
 import osm.map.worldwind.gl.obj.MtlLoader.Material;
 
 public class ObjLoader {
+	private static int oldObjectList;
 
 	List<float[]> vertexSets = new ArrayList<>();
 	List<float[]> vertexSetsNorms = new ArrayList<>();
@@ -81,8 +82,8 @@ public class ObjLoader {
 				if (centered) {
 					centerit();
 				}
-				opengldrawtolist(gl);
-				cleanup();
+				openGlDrawToList(gl);
+//				cleanup();
 			} finally {
 				if (bufferedReader != null) {
 					bufferedReader.close();
@@ -264,10 +265,14 @@ public class ObjLoader {
 		return faces.size();
 	}
 
-	private void opengldrawtolist(GL2 gl) {
+	public void openGlDrawToList(GL2 gl) {
 		String lastMapKd = "";
 		Texture texture = null;
+		if(ObjLoader.oldObjectList > 0) {
+			gl.glDeleteLists(ObjLoader.oldObjectList,1);
+		}
 		this.objectlist = gl.glGenLists(1);
+		ObjLoader.oldObjectList = objectlist;
 
 		gl.glNewList(objectlist, GL2.GL_COMPILE);
 		Material mtl = null;

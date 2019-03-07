@@ -37,14 +37,14 @@ public class ObjLoader {
 
 	public ObjLoader(String objPath, GL2 gl, boolean centered, boolean flipTextureVertically) {
 		this.flipTextureVertically = flipTextureVertically;
-		String path="";
+		String path = "";
 		objPath = objPath.replaceAll("\\\\", "/");
 		int index = objPath.lastIndexOf("/");
-		if(index < 0) {
+		if (index < 0) {
 			index = 0;
 		}
 		String name = objPath.substring(index);
-		path=objPath.substring(0,index);
+		path = objPath.substring(0, index);
 		this.init(path, name, gl, centered);
 	}
 
@@ -66,13 +66,17 @@ public class ObjLoader {
 				is = getInputStream(basePath, objPath);
 				bufferedReader = new BufferedReader(new InputStreamReader(is));
 				final BufferedReader bufferedReaderLocal = bufferedReader;
-				foxtrot.ConcurrentWorker.post(new Task() {
-					@Override
-					public Object run() throws Exception {
-						loadObject(bufferedReaderLocal);
-						return null;
-					}
-				});
+				if (false) {
+					foxtrot.ConcurrentWorker.post(new Task() {
+						@Override
+						public Object run() throws Exception {
+							loadObject(bufferedReaderLocal);
+							return null;
+						}
+					});
+				} else {
+					loadObject(bufferedReaderLocal);
+				}
 				this.processFacesInEDT(); // this process depends on the GL context, which apparently can't be shared between threads
 				if (centered) {
 					centerit();
@@ -219,7 +223,7 @@ public class ObjLoader {
 	}
 
 	public void processFacesInEDT() {
-		for(Face face: this.faces) {
+		for (Face face : this.faces) {
 			face.createTexture();
 		}
 	}

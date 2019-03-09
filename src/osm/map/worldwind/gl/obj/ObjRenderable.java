@@ -11,7 +11,6 @@ import javax.media.opengl.GL2;
 import osm.map.worldwind.gl.GLRenderable;
 
 public class ObjRenderable extends GLRenderable {
-
 	static Map<String, ObjLoader> modelCache = new HashMap<>();
 	static Map<String, String> glModelCache = new HashMap<>();
 	String modelSource;
@@ -34,26 +33,35 @@ public class ObjRenderable extends GLRenderable {
 	}
 
 	public String getModelKey(DrawContext dc) {
-		//String key = modelSource + "#" + dc.hashCode();
 		String key = modelSource + "#" + dc.hashCode();
 		return key;
 	}
 
 	public String getGlModelKey(DrawContext dc) {
-		//String key = modelSource + "#" + dc.hashCode();
 		String key = modelSource + "#" + dc.getGL().hashCode();
 		return key;
+	}
+
+	public void load() {
+		ObjLoader ol = new ObjLoader(modelSource,centerit,flipTextureVertically);
+		modelCache.put(modelSource, ol);
 	}
 
 	protected ObjLoader getModel(final DrawContext dc) {
 		String key = this.getModelKey(dc);
 		String glKey = this.getGlModelKey(dc);
+		ObjLoader model = modelCache.get(modelSource);
 		if (modelCache.get(key) == null) {
-			modelLoading = true;
-			modelCache.put(key, new ObjLoader(modelSource, dc.getGL().getGL2(), centerit, flipTextureVertically));
+			if(model == null) {
+				modelLoading = true;
+				modelCache.put(key, new ObjLoader(modelSource, dc.getGL().getGL2(), centerit, flipTextureVertically));
+			} else {
+				model.createGraphics(dc.getGL().getGL2(), centerit);
+				modelCache.put(key,model);
+			}
 			glModelCache.put(key,glKey);
 		}
-		ObjLoader model = modelCache.get(key);
+		model = modelCache.get(key);
 		eyeDistanceOffset = Math.max(Math.max(model.getXWidth(), model.getYHeight()), model.getZDepth());
 		String oldGlKey = glModelCache.get(key);
 		if(!oldGlKey.equals(glKey)) {
@@ -126,5 +134,6 @@ public class ObjRenderable extends GLRenderable {
 	public void setId(String id) {
 		this.id = id;
 	}
+
 
 }

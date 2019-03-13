@@ -1,14 +1,15 @@
 package osm.map.worldwind.gl.obj;
 
 import com.jogamp.opengl.util.texture.Texture;
+import com.jogamp.opengl.util.texture.TextureData;
 import com.jogamp.opengl.util.texture.TextureIO;
+import foxtrot.Task;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,9 +19,13 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.media.opengl.GL2;
+import javax.media.opengl.GLProfile;
+import javax.swing.SwingUtilities;
 import osm.map.worldwind.gl.obj.MtlLoader.Material;
 
 public class ObjLoader {
+
+	private static int oldObjectList;
 
 	List<float[]> vertexSets = new ArrayList<>();
 	List<float[]> vertexSetsNorms = new ArrayList<>();
@@ -29,31 +34,49 @@ public class ObjLoader {
 	int objectlist;
 	float toppoint, bottompoint, leftpoint, rightpoint, farpoint, nearpoint;
 	Map<String, Texture> textureCache = new HashMap<>();
+	Map<String, TextureData> textureDataCache = new HashMap<>();
 	BoundingBox bbox;
 	private final static Logger logger = Logger.getLogger(ObjLoader.class.getName());
+	private GLProfile glProfile;
 
 	String basePath;
 	boolean flipTextureVertically;
 
+	public ObjLoader(String objPath, boolean centered, boolean flipTextureVertically) {
+		this.flipTextureVertically = flipTextureVertically;
+		String parts[] = parsePath(objPath);
+		// only load the data initially
+		this.loadData(parts[0], parts[1]);
+	}
+
 	public ObjLoader(String objPath, GL2 gl, boolean centered, boolean flipTextureVertically) {
 		this.flipTextureVertically = flipTextureVertically;
-		String path="";
-		objPath = objPath.replaceAll("\\\\", "/");
-		int index = objPath.lastIndexOf("/");
-		if(index < 0) {
-			index = 0;
-		}
-		String name = objPath.substring(index);
-		path=objPath.substring(0,index);
-		this.init(path, name, gl, centered);
+		this.glProfile = gl.getGLProfile();
+		String parts[] = parsePath(objPath);
+		this.loadData(parts[0], parts[1]);
+		this.createGraphics(gl, centered);
 	}
 
 	public ObjLoader(String basePath, String objPath, GL2 gl, boolean centered, boolean flipTextureVertically) {
 		this.flipTextureVertically = flipTextureVertically;
-		this.init(basePath, objPath, gl, centered);
+		this.glProfile = gl.getGLProfile();
+		this.loadData(basePath,objPath);
+		this.createGraphics(gl, centered);
 	}
 
-	private void init(String basePath, String objPath, GL2 gl, boolean centered) {
+	private String[] parsePath(String objPath) {
+		String path = "";
+		objPath = objPath.replaceAll("\\\\", "/");
+		int index = objPath.lastIndexOf("/");
+		if (index < 0) {
+			index = 0;
+		}
+		String name = objPath.substring(index);
+		path = objPath.substring(0, index);
+		return new String[]{path, name};
+	}
+
+	private void loadData(String basePath, String objPath) {
 		try {
 			if (basePath == null) {
 				this.basePath = "";
@@ -65,25 +88,49 @@ public class ObjLoader {
 			try {
 				is = getInputStream(basePath, objPath);
 				bufferedReader = new BufferedReader(new InputStreamReader(is));
-				loadObject(bufferedReader);
-				if (centered) {
-					centerit();
+				final BufferedReader bufferedReaderLocal = bufferedReader;
+				if (SwingUtilities.isEventDispatchThread()) {
+					foxtrot.ConcurrentWorker.post(new Task() {
+						@Override
+						public Object run() throws Exception {
+							loadObject(bufferedReaderLocal);
+							loadTextureData();
+							return null;
+						}
+					});
+				} else {
+					loadObject(bufferedReaderLocal);
+					loadTextureData();
 				}
-				opengldrawtolist(gl);
-				cleanup();
 			} finally {
 				if (bufferedReader != null) {
 					bufferedReader.close();
 				}
 			}
-			this.bbox = new BoundingBox(this.getXWidth(), this.getYHeight(), this.getZDepth(), this.bottompoint, centered);
 		} catch (Exception e) {
-			System.err.println("Error: could not load " + objPath);
-			e.printStackTrace();
+			logger.log(Level.SEVERE, "Error: could not load " + objPath, e);
 		}
 	}
 
-	InputStream getInputStream(String basePath, String objPath) throws IOException {
+	/**
+	 * Must be done in the thread with the GL context
+	 * @param gl
+	 * @param centered 
+	 */
+	final public void createGraphics(GL2 gl, boolean centered) {
+		try {
+			this.processFacesInEDT(); // this process depends on the GL context, which apparently can't be shared between threads
+			if (centered) {
+				centerit();
+			}
+			openGlDrawToList(gl);
+			this.bbox = new BoundingBox(this.getXWidth(), this.getYHeight(), this.getZDepth(), this.bottompoint, centered);
+		} catch (Exception e) {
+			logger.log(Level.SEVERE,"Error creating graphics for " + this.basePath,e);
+		}
+	}
+
+	private InputStream getInputStream(String basePath, String objPath) throws IOException {
 		String path = basePath + "/" + objPath;
 		InputStream is = this.getClass().getResourceAsStream(path);
 		if (is == null) {
@@ -210,6 +257,18 @@ public class ObjLoader {
 		Collections.sort(faces);
 	}
 
+	public void processFacesInEDT() {
+		for (Face face : this.faces) {
+			face.createTexture();
+		}
+	}
+
+	public void loadTextureData() {
+		for (Face face : this.faces) {
+			face.createTextureData();
+		}
+	}
+
 	private void centerit() {
 		float xshift = (rightpoint - leftpoint) / 2.0F;
 		float yshift = (toppoint - bottompoint) / 2.0F;
@@ -246,10 +305,14 @@ public class ObjLoader {
 		return faces.size();
 	}
 
-	private void opengldrawtolist(GL2 gl) {
+	public void openGlDrawToList(GL2 gl) {
 		String lastMapKd = "";
 		Texture texture = null;
+		if (ObjLoader.oldObjectList > 0) {
+			gl.glDeleteLists(ObjLoader.oldObjectList, 1);
+		}
 		this.objectlist = gl.glGenLists(1);
+		ObjLoader.oldObjectList = objectlist;
 
 		gl.glNewList(objectlist, GL2.GL_COMPILE);
 		Material mtl = null;
@@ -357,6 +420,7 @@ public class ObjLoader {
 		int[] vt; //texture
 		int polyType;
 		Texture texture;
+		TextureData textureData;
 
 		public Face(MtlLoader.Material mtl, int[] v, int[] vn, int[] vt) {
 			this.mtl = mtl;
@@ -374,9 +438,61 @@ public class ObjLoader {
 					polyType = GL2.GL_POLYGON;
 					break;
 			}
+		}
+
+		public void createTextureData() {
+			if (mtl.map_Kd != null) {
+				if (textureDataCache.get(mtl.map_Kd) == null) {
+					try {
+						textureData = getTextureData(mtl.map_Kd);
+						textureDataCache.put(mtl.map_Kd, textureData);
+					} catch (Exception e) {
+						logger.log(Level.SEVERE, "Exception reading texture: " + mtl.map_Kd, e);
+					}
+				}
+			}
+		}
+
+		TextureData getTextureData(String map_Kd) throws IOException {
+			InputStream is = null;
+			TextureData t;
+			try {
+				is = getInputStream(basePath, map_Kd);
+				String suffix = null;
+				String tokens[] = map_Kd.split("\\.");
+				if (tokens != null) {
+					if (tokens.length > 1) {
+						suffix = tokens[tokens.length - 1];
+					}
+				}
+				if (glProfile == null) {
+					glProfile = GLProfile.getDefault();
+				}
+				t = TextureIO.newTextureData(glProfile, is, false, suffix);
+			} finally {
+				if (is != null) {
+					is.close();
+				}
+			}
+			return t;
+		}
+
+		private Texture getTextureFromTextureData(String map_Kd) {
+			if (map_Kd == null) {
+				return null;
+			}
+			if (textureCache.get(map_Kd) == null) {
+				Texture t = TextureIO.newTexture(textureData);
+				textureCache.put(map_Kd, t);
+			}
+			return textureCache.get(map_Kd);
+		}
+
+		public void createTexture() {
 			if (mtl.map_Kd != null) {
 				try {
-					texture = getTexture(mtl.map_Kd);
+//					texture = getTexture(mtl.map_Kd);
+					texture = getTextureFromTextureData(mtl.map_Kd);
 				} catch (Exception e) {
 					logger.log(Level.SEVERE, "Exception reading texture: " + mtl.map_Kd, e);
 				}

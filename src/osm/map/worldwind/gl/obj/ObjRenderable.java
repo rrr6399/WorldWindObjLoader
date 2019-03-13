@@ -11,10 +11,11 @@ import javax.media.opengl.GL2;
 import osm.map.worldwind.gl.GLRenderable;
 
 public class ObjRenderable extends GLRenderable {
-
 	static Map<String, ObjLoader> modelCache = new HashMap<>();
+	static Map<String, String> glModelCache = new HashMap<>();
 	String modelSource;
 	boolean centerit = false, flipTextureVertically = false;
+	boolean modelLoading = false;
 
 	private String id;
 	private double minumumScale=.2;
@@ -31,13 +32,43 @@ public class ObjRenderable extends GLRenderable {
 		this.flipTextureVertically = flipTextureVertically;
 	}
 
-	protected ObjLoader getModel(final DrawContext dc) {
+	public String getModelKey(DrawContext dc) {
 		String key = modelSource + "#" + dc.hashCode();
+		return key;
+	}
+
+	public String getGlModelKey(DrawContext dc) {
+		String key = modelSource + "#" + dc.getGL().hashCode();
+		return key;
+	}
+
+	public void load() {
+		ObjLoader ol = new ObjLoader(modelSource,centerit,flipTextureVertically);
+		modelCache.put(modelSource, ol);
+	}
+
+	protected ObjLoader getModel(final DrawContext dc) {
+		String key = this.getModelKey(dc);
+		String glKey = this.getGlModelKey(dc);
+		ObjLoader model = modelCache.get(modelSource);
 		if (modelCache.get(key) == null) {
-			modelCache.put(key, new ObjLoader(modelSource, dc.getGL().getGL2(), centerit, flipTextureVertically));
+			if(model == null) {
+				modelLoading = true;
+				modelCache.put(key, new ObjLoader(modelSource, dc.getGL().getGL2(), centerit, flipTextureVertically));
+			} else {
+				model.createGraphics(dc.getGL().getGL2(), centerit);
+				modelCache.put(key,model);
+			}
+			glModelCache.put(key,glKey);
 		}
-		ObjLoader model = modelCache.get(key);
+		model = modelCache.get(key);
 		eyeDistanceOffset = Math.max(Math.max(model.getXWidth(), model.getYHeight()), model.getZDepth());
+		String oldGlKey = glModelCache.get(key);
+		if(!oldGlKey.equals(glKey)) {
+			model.openGlDrawToList(dc.getGL().getGL2());
+			glModelCache.put(key, glKey);
+		}
+		modelLoading = false;
 		return modelCache.get(key);
 	}
 
@@ -47,6 +78,9 @@ public class ObjRenderable extends GLRenderable {
 
 	@Override
 	protected void drawGL(DrawContext dc) {
+		if(modelLoading) {
+			return;
+		}
 		GL2 gl = dc.getGL().getGL2();
 		gl.glRotated(90, 1, 0, 0);
 		ObjLoader l = getModel(dc);
@@ -100,5 +134,6 @@ public class ObjRenderable extends GLRenderable {
 	public void setId(String id) {
 		this.id = id;
 	}
+
 
 }

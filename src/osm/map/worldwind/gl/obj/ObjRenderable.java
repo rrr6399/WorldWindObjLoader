@@ -17,6 +17,7 @@ public class ObjRenderable extends GLRenderable {
 	boolean centerit = false, flipTextureVertically = false;
 
 	private String id;
+	private double minumumScale=.2;
 
 	public ObjRenderable(Position pos, String modelSource) {
 		super(pos);
@@ -82,10 +83,14 @@ public class ObjRenderable extends GLRenderable {
 
 		double scale = size / modelPixels;
 
-		if (scale < .5) {
-			scale = .5;
+		if (scale < this.minumumScale) {
+			scale = this.minumumScale;
 		}
 		return scale;
+	}
+
+	public void setMinimumScaleSize(double minimumScale) {
+		this.minumumScale = minimumScale;
 	}
 
 	public String getId() {

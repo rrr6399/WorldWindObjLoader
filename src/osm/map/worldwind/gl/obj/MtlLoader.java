@@ -66,6 +66,9 @@ public class MtlLoader {
 	}
 
 	public Material getMtl(String namepass) {
+		if(namepass == null) {
+			return (Material) materials.get(0);
+		}
 		for (int i = 0; i < materials.size(); i++) {
 			Material mtl = (Material) materials.get(i);
 			if (mtl.name.matches(namepass)) {

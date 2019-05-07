@@ -5,7 +5,6 @@ import gov.nasa.worldwind.event.SelectEvent;
 import gov.nasa.worldwind.event.SelectListener;
 import gov.nasa.worldwind.geom.Position;
 import gov.nasa.worldwind.layers.*;
-import gov.nasa.worldwind.terrain.HighResolutionTerrain;
 import gov.nasa.worldwind.view.orbit.BasicOrbitView;
 import gov.nasa.worldwindx.examples.ApplicationTemplate;
 import static gov.nasa.worldwindx.examples.ApplicationTemplate.insertBeforeCompass;
@@ -30,21 +29,24 @@ public class Tester extends ApplicationTemplate {
 //          String ep3="C:/RaptorX/projects/models/ep3/ep3b.obj";
 //			String copter = "C:/RaptorX/projects/DpacsPlugin/resources/models/copter.obj";
 			String copter = "/models/s900/copter.obj";
+//			String copter = "/models/tmrs2/tmrs2.obj";
+//			String copter = "/models/tmrs2/tmrs2-chrome.obj";
 
 			layer = new RenderableLayer();
 //			pos = Position.fromDegrees(30, -100, alt);
-			HighResolutionTerrain hrt = new HighResolutionTerrain(this.getWwd().getModel().getGlobe(), 30.0);
+//			HighResolutionTerrain hrt = new HighResolutionTerrain(this.getWwd().getModel().getGlobe(), 30.0);
 			pos = Position.fromDegrees(35.77750, -120.80565, alt);
-			pos = new Position(pos, hrt.getElevation(pos));
+//			pos = new Position(pos, hrt.getElevation(pos));
 
 //			this.renderable = new ObjRenderable(pos, f550, true, false);
 			this.renderable = new ObjRenderable(pos, copter, true, false);
-			this.renderable.setSize(250);
+			this.renderable.load();
+			this.renderable.setSize(500);
 			this.renderable.setKeepConstantSize(false);
 //			this.renderable.setAzimuth(90);
 //			this.renderable.setRoll(90);
 //			this.renderable.setElevation(-90);
-			this.renderable.setRenderDistance(1000);
+			this.renderable.setRenderDistance(50000);
 //          model.setYaw(55);
 			layer.addRenderable(this.renderable);
 			layer.setPickEnabled(true);

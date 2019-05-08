@@ -25,8 +25,9 @@ import osm.map.worldwind.gl.obj.MtlLoader.Material;
 
 public class ObjLoader {
 
-	private static int oldObjectList;
+	private static final Map<String,Integer> oldObjectListLookup = new HashMap<>();
 
+	private String modelName;
 	List<float[]> vertexSets = new ArrayList<>();
 	List<float[]> vertexSetsNorms = new ArrayList<>();
 	List<float[]> vertexSetsTexs = new ArrayList<>();
@@ -46,6 +47,7 @@ public class ObjLoader {
 		this.flipTextureVertically = flipTextureVertically;
 		String parts[] = parsePath(objPath);
 		// only load the data initially
+		modelName = parts[1];
 		this.loadData(parts[0], parts[1]);
 	}
 
@@ -53,6 +55,7 @@ public class ObjLoader {
 		this.flipTextureVertically = flipTextureVertically;
 		this.glProfile = gl.getGLProfile();
 		String parts[] = parsePath(objPath);
+		modelName = parts[1];
 		this.loadData(parts[0], parts[1]);
 		this.createGraphics(gl, centered);
 	}
@@ -60,6 +63,7 @@ public class ObjLoader {
 	public ObjLoader(String basePath, String objPath, GL2 gl, boolean centered, boolean flipTextureVertically) {
 		this.flipTextureVertically = flipTextureVertically;
 		this.glProfile = gl.getGLProfile();
+		modelName = objPath;
 		this.loadData(basePath,objPath);
 		this.createGraphics(gl, centered);
 	}
@@ -108,7 +112,7 @@ public class ObjLoader {
 				}
 			}
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Error: could not load " + objPath, e);
+			logger.log(Level.SEVERE, "Error: could not load " + basePath+File.pathSeparator+objPath, e);
 		}
 	}
 
@@ -308,11 +312,12 @@ public class ObjLoader {
 	public void openGlDrawToList(GL2 gl) {
 		String lastMapKd = "";
 		Texture texture = null;
-		if (ObjLoader.oldObjectList > 0) {
-			gl.glDeleteLists(ObjLoader.oldObjectList, 1);
+
+		if (ObjLoader.oldObjectListLookup.get(modelName) != null) {
+			gl.glDeleteLists(ObjLoader.oldObjectListLookup.get(modelName), 1);
 		}
 		this.objectlist = gl.glGenLists(1);
-		ObjLoader.oldObjectList = objectlist;
+		ObjLoader.oldObjectListLookup.put(modelName, objectlist);
 
 		gl.glNewList(objectlist, GL2.GL_COMPILE);
 		Material mtl = null;

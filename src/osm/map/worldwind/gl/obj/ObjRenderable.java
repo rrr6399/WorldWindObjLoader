@@ -11,10 +11,11 @@ import javax.media.opengl.GL2;
 import osm.map.worldwind.gl.GLRenderable;
 
 public class ObjRenderable extends GLRenderable {
-	static Map<String, ObjLoader> modelCache = new HashMap<>();
-	static Map<String, String> glModelCache = new HashMap<>();
+	static final  Map<String, ObjLoader> modelCache = new HashMap<>();
+	static final Map<String, String> glModelCache = new HashMap<>();
 	String modelSource;
-	boolean centerit = false, flipTextureVertically = false;
+	boolean centerit = false;
+	boolean flipTextureVertically = false;
 	boolean modelLoading = false;
 
 	private String id;
@@ -43,8 +44,16 @@ public class ObjRenderable extends GLRenderable {
 	}
 
 	public void load() {
-		ObjLoader ol = new ObjLoader(modelSource,centerit,flipTextureVertically);
-		modelCache.put(modelSource, ol);
+		synchronized (modelCache) {
+			ObjLoader ol = new ObjLoader(modelSource,centerit,flipTextureVertically);
+			modelCache.put(modelSource, ol);
+		}
+	}
+
+	public boolean isModelLoaded() {
+		synchronized (modelCache) {
+			return modelCache.containsKey(modelSource);
+		}
 	}
 
 	protected ObjLoader getModel(final DrawContext dc) {

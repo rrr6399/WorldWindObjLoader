@@ -28,8 +28,8 @@ public class Tester extends ApplicationTemplate {
 			String f550 = "/models/f550/f550.obj";
 //          String ep3="C:/RaptorX/projects/models/ep3/ep3b.obj";
 //			String copter = "C:/RaptorX/projects/DpacsPlugin/resources/models/copter.obj";
-			String copter = "/models/s900/copter.obj";
-//			String copter = "/models/tmrs2/tmrs2.obj";
+//			String copter = "/models/s900/copter.obj";
+			String copter = "/models/tmrs2/tmrs2.obj";
 //			String copter = "/models/tmrs2/tmrs2-chrome.obj";
 
 			layer = new RenderableLayer();
@@ -41,7 +41,7 @@ public class Tester extends ApplicationTemplate {
 //			this.renderable = new ObjRenderable(pos, f550, true, false);
 			this.renderable = new ObjRenderable(pos, copter, true, false);
 			this.renderable.load();
-			this.renderable.setSize(500);
+			this.renderable.setSize(200);
 			this.renderable.setKeepConstantSize(false);
 //			this.renderable.setAzimuth(90);
 //			this.renderable.setRoll(90);

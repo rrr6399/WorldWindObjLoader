@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,11 +73,13 @@ public class ObjLoader {
 		String path = "";
 		objPath = objPath.replaceAll("\\\\", "/");
 		int index = objPath.lastIndexOf("/");
+		String name;
 		if (index < 0) {
-			index = 0;
+			name = objPath;
+		} else {
+			name = objPath.substring(index+1);
+			path = objPath.substring(0, index);
 		}
-		String name = objPath.substring(index);
-		path = objPath.substring(0, index);
 		return new String[]{path, name};
 	}
 
@@ -112,7 +115,7 @@ public class ObjLoader {
 				}
 			}
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Error: could not load " + basePath+File.pathSeparator+objPath, e);
+			logger.log(Level.SEVERE, "Error: could not load " + basePath+"/"+objPath, e);
 		}
 	}
 
@@ -280,7 +283,7 @@ public class ObjLoader {
 		for (int i = 0; i < vertexSets.size(); i++) {
 			float coords[] = new float[4];
 			coords[0] = (vertexSets.get(i))[0] - leftpoint - xshift;
-			//coords[1] = (vertexSets.get(i))[1] - bottompoint - yshift;
+//			coords[1] = (vertexSets.get(i))[1] - bottompoint - yshift;
 			coords[1] = (vertexSets.get(i))[1] - bottompoint;
 			coords[2] = (vertexSets.get(i))[2] - farpoint - zshift;
 			vertexSets.set(i, coords);

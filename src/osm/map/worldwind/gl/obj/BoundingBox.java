@@ -36,7 +36,8 @@ public class BoundingBox {
 		}
 		for (float row[] : v) {
 			row[0] = row[0] * dx;
-			row[1] = (row[1]) * dy - bottomPoint;
+			//row[1] = (row[1]) * dy - bottomPoint;
+			row[1] = (row[1]) * dy + dy/2f;
 			row[2] = row[2] * dz;
 		}
 	}

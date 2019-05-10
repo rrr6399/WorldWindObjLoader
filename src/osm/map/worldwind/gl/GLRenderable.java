@@ -37,7 +37,8 @@ public abstract class GLRenderable implements Renderable, PreRenderable, Highlig
 	protected boolean clamp = false;
 	protected boolean useLighting = true;
 	protected boolean visible = true;
-	protected Vec4 lightSource = new Vec4(1.0, 0.5, 1.0);
+	//protected Vec4 lightSource = new Vec4(1.0, 0.5, 1.0);
+	protected Vec4 lightSource = new Vec4(1.0,1.0,1.0);
 	protected double eyeDistance;
 	protected double eyeDistanceOffset = 0;
 	boolean drawnOnce = false;

@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Spliterator;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,7 +25,7 @@ import osm.map.worldwind.gl.obj.MtlLoader.Material;
 
 public class ObjLoader {
 
-	private static final Map<String,Integer> oldObjectListLookup = new HashMap<>();
+	private static final Map<String, Integer> oldObjectListLookup = new HashMap<>();
 
 	private String modelName;
 	List<float[]> vertexSets = new ArrayList<>();
@@ -34,7 +33,7 @@ public class ObjLoader {
 	List<float[]> vertexSetsTexs = new ArrayList<>();
 	List<Face> faces = new ArrayList<>();
 	int objectlist;
-	float toppoint, bottompoint, leftpoint, rightpoint, farpoint, nearpoint;
+	float topPoint, bottomPoint, leftPoint, rightPoint, farPoint, nearPoint;
 	Map<String, Texture> textureCache = new HashMap<>();
 	Map<String, TextureData> textureDataCache = new HashMap<>();
 	BoundingBox bbox;
@@ -65,7 +64,7 @@ public class ObjLoader {
 		this.flipTextureVertically = flipTextureVertically;
 		this.glProfile = gl.getGLProfile();
 		modelName = objPath;
-		this.loadData(basePath,objPath);
+		this.loadData(basePath, objPath);
 		this.createGraphics(gl, centered);
 	}
 
@@ -77,7 +76,7 @@ public class ObjLoader {
 		if (index < 0) {
 			name = objPath;
 		} else {
-			name = objPath.substring(index+1);
+			name = objPath.substring(index + 1);
 			path = objPath.substring(0, index);
 		}
 		return new String[]{path, name};
@@ -115,14 +114,15 @@ public class ObjLoader {
 				}
 			}
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Error: could not load " + basePath+"/"+objPath, e);
+			logger.log(Level.SEVERE, "Error: could not load " + basePath + "/" + objPath, e);
 		}
 	}
 
 	/**
 	 * Must be done in the thread with the GL context
+	 *
 	 * @param gl
-	 * @param centered 
+	 * @param centered
 	 */
 	final public void createGraphics(GL2 gl, boolean centered) {
 		try {
@@ -131,9 +131,9 @@ public class ObjLoader {
 				centerit();
 			}
 			openGlDrawToList(gl);
-			this.bbox = new BoundingBox(this.getXWidth(), this.getYHeight(), this.getZDepth(), this.bottompoint, centered);
+			this.bbox = new BoundingBox(this.getXWidth(), this.getYHeight(), this.getZDepth(), this.bottomPoint, centered);
 		} catch (Exception e) {
-			logger.log(Level.SEVERE,"Error creating graphics for " + this.basePath,e);
+			logger.log(Level.SEVERE, "Error creating graphics for " + this.basePath, e);
 		}
 	}
 
@@ -178,21 +178,6 @@ public class ObjLoader {
 						for (int i = 0; st.hasMoreTokens(); i++) {
 							coords[i] = Float.parseFloat(st.nextToken());
 						}
-						if (firstpass) {
-							rightpoint = coords[0];
-							leftpoint = coords[0];
-							toppoint = coords[1];
-							bottompoint = coords[1];
-							nearpoint = coords[2];
-							farpoint = coords[2];
-							firstpass = false;
-						}
-						rightpoint = Math.max(coords[0], rightpoint);
-						leftpoint = Math.min(coords[0], leftpoint);
-						toppoint = Math.max(coords[1], toppoint);
-						bottompoint = Math.min(coords[1], bottompoint);
-						nearpoint = Math.max(coords[2], nearpoint);
-						farpoint = Math.min(coords[2], farpoint);
 						vertexSets.add(coords);
 					} else //Loads vertex texture coordinates
 					{
@@ -262,6 +247,7 @@ public class ObjLoader {
 			System.out.println("Malformed OBJ file: " + br.toString() + "\r \r" + e.getMessage());
 		}
 		Collections.sort(faces);
+		this.calculateBounds();
 	}
 
 	public void processFacesInEDT() {
@@ -277,35 +263,72 @@ public class ObjLoader {
 	}
 
 	private void centerit() {
-		float xshift = (rightpoint - leftpoint) / 2.0F;
-		float yshift = (toppoint - bottompoint) / 2.0F;
-		float zshift = (nearpoint - farpoint) / 2.0F;
+		float xshift = getXWidth() / 2.0F;
+		float yshift = getYHeight() / 2.0F;
+		float zshift = getZDepth() / 2.0F;
 		for (int i = 0; i < vertexSets.size(); i++) {
-			float coords[] = new float[4];
-			coords[0] = (vertexSets.get(i))[0] - leftpoint - xshift;
-//			coords[1] = (vertexSets.get(i))[1] - bottompoint - yshift;
-			coords[1] = (vertexSets.get(i))[1] - bottompoint;
-			coords[2] = (vertexSets.get(i))[2] - farpoint - zshift;
+			float coords[] = vertexSets.get(i);
+			coords[0] = coords[0] - leftPoint - xshift;
+			coords[1] = coords[1] - bottomPoint; // want to stretch from y=0 to 1
+			coords[2] = coords[2] - farPoint - zshift;
 			vertexSets.set(i, coords);
 		}
-
+		scaleit();
+		calculateBounds();
 	}
 
-	public double getMaxDimen() {
-		double max = Math.max(getXWidth(), getYHeight());
-		return Math.max(max, getZDepth());
+	private void scaleit() {
+		float scale = getMaxDimension();
+		for (int i = 0; i < vertexSets.size(); i++) {
+			float coords[] = vertexSets.get(i);
+			coords[0] = coords[0] / scale;
+			coords[1] = coords[1] / scale;
+			coords[2] = coords[2] / scale;
+			vertexSets.set(i, coords);
+		}
+	}
+
+	private void calculateBounds() {
+		boolean firstpass = true;
+		for (int i = 0; i < vertexSets.size(); i++) {
+			float coords[] = vertexSets.get(i);
+			if (firstpass) {
+				rightPoint = coords[0];
+				leftPoint = coords[0];
+				topPoint = coords[1];
+				bottomPoint = coords[1];
+				nearPoint = coords[2];
+				farPoint = coords[2];
+				firstpass = false;
+			}
+			rightPoint = Math.max(coords[0], rightPoint);
+			leftPoint = Math.min(coords[0], leftPoint);
+			topPoint = Math.max(coords[1], topPoint);
+			bottomPoint = Math.min(coords[1], bottomPoint);
+			nearPoint = Math.max(coords[2], nearPoint);
+			farPoint = Math.min(coords[2], farPoint);
+		}
+		System.out.println("Origin = " + 
+			(this.rightPoint+this.leftPoint)/2.0 + ", " +
+			(this.bottomPoint+this.topPoint)/2.0 + ", " +
+			(this.nearPoint+this.farPoint)/2.0
+		);
+	}
+
+	public float getMaxDimension() {
+		return Math.max(getZDepth(), Math.max(getXWidth(), getYHeight()));
 	}
 
 	public float getXWidth() {
-		return rightpoint - leftpoint;
+		return rightPoint - leftPoint;
 	}
 
 	public float getYHeight() {
-		return toppoint - bottompoint;
+		return topPoint - bottomPoint;
 	}
 
 	public float getZDepth() {
-		return nearpoint - farpoint;
+		return nearPoint - farPoint;
 	}
 
 	public int getPolygonCount() {
@@ -509,6 +532,9 @@ public class ObjLoader {
 
 		@Override
 		public int compareTo(Face face) {
+			if(face == null) {
+				return -1;
+			}
 			if (this.mtl.d > face.mtl.d) { //draw opaque faces first
 				return -1;
 			} else if (this.mtl.d < face.mtl.d) {

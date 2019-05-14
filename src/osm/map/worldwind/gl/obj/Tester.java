@@ -21,16 +21,21 @@ public class Tester extends ApplicationTemplate {
 		RenderableLayer layer;
 		Timer timer;
 //		double alt = 180;
-		double alt = 179;
+		double alt = 180;
 		private ObjRenderable renderable;
 
 		public AppFrame() {
 
-			String copter = "/models/f550/f550.obj";
+//			String copter = "/models/f550/f550.obj";
 //          String ep3="C:/RaptorX/projects/models/ep3/ep3b.obj";
 //			String copter = "/models/s900/copter.obj";
-//			String copter = "/models/tmrs2/tmrs2.obj";
+			//String copter = "/models/tmrs2/tmrs2.obj";
+//			String copter = "/models/tmrs2/tmrs2-blender.obj";
+//			String copter = "/models/tmrs2/tmrs-thinned-50-25.obj";
+//			String copter = "/models/tmrs2/tmrs-thinned-05.obj";
 //			String copter = "/models/matrice/matrice.obj";
+			String copter = "/models/matrice/matrice-600.obj";
+//			String copter = "/models/satec/Ft-Story-2-and-3.obj";
 
 			layer = new RenderableLayer();
 //			pos = Position.fromDegrees(30, -100, alt);
@@ -38,13 +43,14 @@ public class Tester extends ApplicationTemplate {
 			pos = Position.fromDegrees(35.77750, -120.80565, alt);
 			pos = new Position(pos, hrt.getElevation(pos));
 
-//			this.renderable = new ObjRenderable(pos, f550, true, false);
 			this.renderable = new ObjRenderable(pos, copter, true, false);
+//			this.renderable = new ObjRenderable(pos, copter, false, false);
 			long t0 = System.currentTimeMillis();
 			this.renderable.load();
 			long t1 = System.currentTimeMillis();
 			System.out.println("Time to load model (seconds): " + (t1-t0)/1000.0);
-			this.renderable.setSize(400);
+			this.renderable.setSize(200);
+			this.renderable.setMinimumScaleSize(20);
 			this.renderable.setKeepConstantSize(false);
 //			this.renderable.setAzimuth(90);
 //			this.renderable.setRoll(90);

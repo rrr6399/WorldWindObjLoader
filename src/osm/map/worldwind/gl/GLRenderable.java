@@ -37,8 +37,9 @@ public abstract class GLRenderable implements Renderable, PreRenderable, Highlig
 	protected boolean clamp = false;
 	protected boolean useLighting = true;
 	protected boolean visible = true;
-	//protected Vec4 lightSource = new Vec4(1.0, 0.5, 1.0);
-	protected Vec4 lightSource = new Vec4(1.0,1.0,1.0);
+	protected Vec4 lightSource1 = new Vec4(1.0, 0, 1.0);
+	protected Vec4 lightSource2 = new Vec4(1.0,.50,1.0);
+	protected Vec4 lightSource3 = new Vec4(0.0,1.0,1.0);
 	protected double eyeDistance;
 	protected double eyeDistanceOffset = 0;
 	boolean drawnOnce = false;
@@ -152,12 +153,18 @@ public abstract class GLRenderable implements Renderable, PreRenderable, Highlig
 
 			gl.glEnable(GL2.GL_LIGHT0);
 
-			Vec4 vec = lightSource.normalize3();
-			float[] params = new float[]{(float) vec.x, (float) vec.y, (float) vec.z, 0f};
+			Vec4 vec1 = lightSource1.normalize3();
+			Vec4 vec2 = lightSource2.normalize3();
+			Vec4 vec3 = lightSource2.normalize3();
+			float[] params1 = new float[]{(float) vec1.x, (float) vec1.y, (float) vec1.z, 0f};
+			float[] params2 = new float[]{(float) vec2.x, (float) vec2.y, (float) vec2.z, 0f};
+			float[] params3 = new float[]{(float) vec3.x, (float) vec3.y, (float) vec3.z, 0f};
 			gl.glMatrixMode(GL2.GL_MODELVIEW);
 			gl.glPushMatrix();
 			gl.glLoadIdentity();
-			gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, params, 0);
+			gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, params1, 0);
+			gl.glLightfv(GL2.GL_LIGHT1, GL2.GL_POSITION, params2, 0);
+			gl.glLightfv(GL2.GL_LIGHT2, GL2.GL_POSITION, params3, 0);
 			gl.glPopMatrix();
 		}
 

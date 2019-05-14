@@ -34,7 +34,7 @@ public class Tester extends ApplicationTemplate {
 //			String copter = "/models/tmrs2/tmrs-thinned-50-25.obj";
 //			String copter = "/models/tmrs2/tmrs-thinned-05.obj";
 //			String copter = "/models/matrice/matrice.obj";
-			String copter = "/models/matrice/matrice-600.obj";
+			String copter = "/models/matrice/matrice.obj";
 //			String copter = "/models/satec/Ft-Story-2-and-3.obj";
 
 			layer = new RenderableLayer();
@@ -65,7 +65,7 @@ public class Tester extends ApplicationTemplate {
 			class MyBasicOrbitView extends BasicOrbitView {
 
 				public double computeNearClipDistance() {
-					return .1;
+					return .01;
 				}
 			};
 

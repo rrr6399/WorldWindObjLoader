@@ -19,7 +19,7 @@ public class ObjRenderable extends GLRenderable {
 	boolean modelLoading = false;
 
 	private String id;
-	private double minumumScale=20;
+	private double minumumScale=100;
 
 	public ObjRenderable(Position pos, String modelSource) {
 		super(pos);

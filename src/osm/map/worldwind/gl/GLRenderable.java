@@ -21,6 +21,7 @@ import gov.nasa.worldwind.render.Renderable;
 import java.awt.Color;
 import java.awt.Point;
 import java.beans.PropertyChangeSupport;
+import java.util.Date;
 import javax.media.opengl.GL2;
 
 public abstract class GLRenderable implements Renderable, PreRenderable, Highlightable, Movable, Movable2, Draggable {
@@ -104,6 +105,7 @@ public abstract class GLRenderable implements Renderable, PreRenderable, Highlig
 	}
 
 	protected void draw(DrawContext dc) {
+//		long t0 = System.currentTimeMillis();
 		GL2 gl = dc.getGL().getGL2();
 
 		Vec4 loc;
@@ -125,6 +127,8 @@ public abstract class GLRenderable implements Renderable, PreRenderable, Highlig
 			drawGL(dc);
 			dc.getView().popReferenceCenter(dc);
 		}
+//		long t1 = System.currentTimeMillis();
+//		System.out.println("draw gl " + new Date() + " dt = " + (t1-t0)/1000.0);
 	}
 
 	protected abstract void drawGL(DrawContext dc);

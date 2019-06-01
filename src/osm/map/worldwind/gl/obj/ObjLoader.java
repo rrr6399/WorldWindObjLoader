@@ -23,6 +23,21 @@ import javax.media.opengl.GLProfile;
 import javax.swing.SwingUtilities;
 import osm.map.worldwind.gl.obj.MtlLoader.Material;
 
+/**
+ * Note from WorldWindowGLCanvas documentation:
+*  Under certain conditions, JOGL replaces the <code>GLContext</code> associated with instances of this class. This then
+ * necessitates that all resources such as textures that have been stored on the graphic devices must be regenerated for
+ * the new context. World Wind does this automatically by clearing the associated {@link GpuResourceCache}. Objects
+ * subsequently rendered automatically re-create those resources. If an application creates its own graphics resources,
+ * including textures, vertex buffer objects and display lists, it must store them in the <code>GpuResourceCache</code>
+ * associated with the current {@link gov.nasa.worldwind.render.DrawContext} so that they are automatically cleared, and
+ * be prepared to re-create them if they do not exist in the <code>DrawContext</code>'s current
+ * <code>GpuResourceCache</code> when needed. Examples of doing this can be found by searching for usages of the method
+ * {@link GpuResourceCache#get(Object)} and {@link GpuResourceCache#getTexture(Object)}.
+ * 
+ * TODO: Need to migrate to this approach
+ */
+
 public class ObjLoader {
 
 	private static final Map<String, Integer> oldObjectListLookup = new HashMap<>();
